@@ -209,8 +209,7 @@ function renderPage() {
   html += '</tbody></table>';
   $('tableHolder').innerHTML = html;
 
-  // Volta ao topo da tabela ao trocar de página
-  $('tableHolder').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ── PAGINAÇÃO ─────────────────────────────────────────────────
