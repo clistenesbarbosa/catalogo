@@ -18,6 +18,7 @@
     .brand{display:flex;align-items:center;gap:18px;}
     .brand-logo{height:56px;width:auto;object-fit:contain;}
     .brand-title{font-size:28px;font-weight:700;color:var(--primary);margin:0;}
+    .brand-subtitle{font-size:11px;color:var(--primary);opacity:.7;margin-top:3px;text-align:center;}
 
     /* LAYOUT */
     .layout{display:flex;flex-direction:column;gap:16px;padding:16px;}
@@ -71,7 +72,10 @@
 <header class="topbar">
   <div class="brand">
     <img class="brand-logo" src="https://lh3.googleusercontent.com/d/1FepWjuuLUr0q0PCnvHODxj1vbk288Lh6" alt="Logo FIESC"/>
-    <h1 class="brand-title">Base Geral de Cadastro</h1>
+    <div>
+      <h1 class="brand-title">Base Geral de Cadastro</h1>
+      <div id="dataAtualizacao" class="brand-subtitle"></div>
+    </div>
   </div>
 </header>
 
@@ -131,7 +135,16 @@ async function init() {
   try {
     const res = await fetch(JSON_URL);
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    ALL = await res.json();
+    const payload = await res.json();
+    // Suporta tanto o formato novo { atualizadoEm, itens } quanto o array legado
+    if (Array.isArray(payload)) {
+      ALL = payload;
+    } else {
+      ALL = payload.itens || [];
+      if (payload.atualizadoEm) {
+        document.getElementById('dataAtualizacao').textContent = 'Atualizado em: ' + payload.atualizadoEm;
+      }
+    }
   } catch(e) {
     $('tableHolder').innerHTML = '<div class="loader">Erro ao carregar: ' + e.message + '</div>';
     return;
