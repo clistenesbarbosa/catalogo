@@ -7,17 +7,23 @@
   <style>
     :root{
       --bg:#f5f7fb;--panel:#ffffff;--border:#dfe3eb;--text:#1f2937;
-      --muted:#6b7280;--primary:#164194;--shadow:0 8px 24px rgba(15,23,42,.08);--radius:16px;
+      --muted:#6b7280;--primary:#164194;--primary-soft:#eaf2ff;
+      --shadow:0 8px 24px rgba(15,23,42,.08);--radius:16px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-    body{display:flex;flex-direction:column}
+    html,body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+
+    /* HEADER */
     .topbar{background:#fff;border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;justify-content:center;position:sticky;top:0;z-index:20;}
     .brand{display:flex;align-items:center;gap:18px;}
     .brand-logo{height:56px;width:auto;object-fit:contain;}
     .brand-title{font-size:28px;font-weight:700;color:var(--primary);margin:0;}
+
+    /* LAYOUT */
     .layout{display:flex;flex-direction:column;gap:16px;padding:16px;}
     .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+
+    /* FILTROS */
     .filters-card{padding:16px 18px;}
     .filters-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 16px;}
     .filter-group{display:flex;flex-direction:column;gap:6px;}
@@ -30,9 +36,13 @@
     .search-box input{border:none;outline:none;width:100%;font-size:14px;background:transparent;}
     .btn{border:1px solid var(--border);background:#fff;color:var(--text);border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600;box-shadow:var(--shadow);white-space:nowrap;}
     .btn:hover{background:#f0f4ff;border-color:var(--primary);color:var(--primary);}
+
+    /* TOOLBAR */
     .table-toolbar{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
     .table-toolbar .info{font-size:13px;color:var(--muted);}
-    .table-container{overflow:auto;}
+
+    /* TABELA */
+    .table-container{overflow-x:auto;}
     table{width:100%;border-collapse:separate;border-spacing:0;min-width:1100px;}
     thead th{position:sticky;top:0;background:#fff;z-index:2;text-align:center;padding:12px;border-bottom:1px solid var(--border);font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.4px;white-space:nowrap;}
     tbody td{padding:12px;border-bottom:1px solid #eef1f6;font-size:14px;vertical-align:top;}
@@ -42,6 +52,15 @@
     .badge.status-padrao{background:#ecfdf5;color:#065f46;border-color:#a7f3d0;}
     .badge.status-fora{background:#fff7ed;color:#9a3412;border-color:#fed7aa;}
     .loader{padding:40px;text-align:center;color:var(--muted);}
+
+    /* PAGINAÇÃO */
+    .pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 18px;border-top:1px solid var(--border);flex-wrap:wrap;}
+    .pg-btn{min-width:36px;height:36px;padding:0 10px;border:1px solid var(--border);background:#fff;color:var(--text);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
+    .pg-btn:hover:not(:disabled){background:var(--primary-soft);border-color:var(--primary);color:var(--primary);}
+    .pg-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+    .pg-btn:disabled{opacity:.35;cursor:default;}
+    .pg-ellipsis{font-size:13px;color:var(--muted);padding:0 4px;}
+
     @media(max-width:1200px){.filters-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
     @media(max-width:900px){.filters-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
     @media(max-width:640px){.filters-grid{grid-template-columns:1fr;}}
@@ -57,6 +76,7 @@
 </header>
 
 <main class="layout">
+
   <section class="card filters-card">
     <div class="filters-grid">
       <div class="filter-group"><label for="fCatalogo">Catálogo</label><select id="fCatalogo"><option value="">Todos</option></select></div>
@@ -75,21 +95,24 @@
       </div>
     </div>
   </section>
+
   <section class="card">
     <div class="table-toolbar"><div class="info" id="tableInfo">Carregando registros...</div></div>
     <div class="table-container"><div id="tableHolder" class="loader">Carregando catálogo...</div></div>
+    <div class="pagination" id="pagination"></div>
   </section>
+
 </main>
 
 <script>
-const JSON_URL = 'data/catalogo.json';
+const JSON_URL  = 'data/catalogo.json';
+const PAGE_SIZE = 50;
 
-// ── ESTADO ───────────────────────────────────────────────────
-let ALL        = [];   // dados originais
-let IDX        = [];   // índice de busca pré-computado (string normalizada por linha)
+let ALL      = [];
+let IDX      = [];
+let FILTERED = [];
+let currentPage = 1;
 let searchTimer = null;
-let workerBusy  = false;
-let pendingCall = null;
 
 const $ = id => document.getElementById(id);
 
@@ -103,35 +126,7 @@ const FILTER_DEFS = [
   { el: $('fTipoFiscal'), key: 'TIPOFISCALPROD' },
 ];
 
-// ── WEB WORKER (inline via Blob) ─────────────────────────────
-// Roda a filtragem numa thread separada — interface nunca trava
-const WORKER_CODE = `
-self.onmessage = function(e) {
-  const { all, idx, q, filters } = e.data;
-  const result = [];
-  for (let i = 0; i < all.length; i++) {
-    const row = all[i];
-    if (q && !idx[i].includes(q)) continue;
-    let ok = true;
-    for (let j = 0; j < filters.length; j++) {
-      const f = filters[j];
-      if (f.val && row[f.key] !== f.val) { ok = false; break; }
-    }
-    if (ok) result.push(i);
-  }
-  self.postMessage(result);
-};
-`;
-const worker = new Worker(URL.createObjectURL(new Blob([WORKER_CODE], { type: 'application/javascript' })));
-
-worker.onmessage = function(e) {
-  workerBusy = false;
-  const indices = e.data;
-  renderTable(indices.map(i => ALL[i]), indices.length);
-  if (pendingCall) { const fn = pendingCall; pendingCall = null; fn(); }
-};
-
-// ── INIT ─────────────────────────────────────────────────────
+// ── INIT ──────────────────────────────────────────────────────
 async function init() {
   try {
     const res = await fetch(JSON_URL);
@@ -142,10 +137,8 @@ async function init() {
     return;
   }
 
-  // Pré-computar índice de busca: concatena PRODUTO_NOME + VARIACAO normalizado
-  IDX = ALL.map(r =>
-    norm((r['PRODUTO_NOME'] || '') + ' ' + (r['VARIACAO'] || ''))
-  );
+  // Pré-computar índice de busca uma única vez
+  IDX = ALL.map(r => norm((r['PRODUTO_NOME'] || '') + ' ' + (r['VARIACAO'] || '')));
 
   // Popular dropdowns
   FILTER_DEFS.forEach(f => {
@@ -155,80 +148,131 @@ async function init() {
       o.value = o.textContent = v;
       f.el.appendChild(o);
     });
-    f.el.addEventListener('change', scheduleFilter);
+    f.el.addEventListener('change', () => { currentPage = 1; applyFilters(); });
   });
 
   $('globalSearch').addEventListener('input', () => {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(scheduleFilter, 300);
+    searchTimer = setTimeout(() => { currentPage = 1; applyFilters(); }, 300);
   });
 
   $('clearBtn').addEventListener('click', () => {
     FILTER_DEFS.forEach(f => f.el.value = '');
     $('globalSearch').value = '';
-    scheduleFilter();
+    currentPage = 1;
+    applyFilters();
   });
 
-  scheduleFilter();
+  applyFilters();
 }
 
-// ── FILTRAR ──────────────────────────────────────────────────
-function scheduleFilter() {
-  const call = () => {
-    if (workerBusy) { pendingCall = call; return; }
-    workerBusy = true;
-    worker.postMessage({
-      all:     ALL,
-      idx:     IDX,
-      q:       norm($('globalSearch').value),
-      filters: FILTER_DEFS.map(f => ({ key: f.key, val: f.el.value }))
-    });
-  };
-  call();
-}
+// ── FILTRAR ───────────────────────────────────────────────────
+function applyFilters() {
+  const q = norm($('globalSearch').value);
 
-// ── RENDERIZAR ───────────────────────────────────────────────
-function renderTable(items, total) {
+  FILTERED = [];
+  for (let i = 0; i < ALL.length; i++) {
+    if (q && !IDX[i].includes(q)) continue;
+    let ok = true;
+    for (const f of FILTER_DEFS) {
+      if (f.el.value && ALL[i][f.key] !== f.el.value) { ok = false; break; }
+    }
+    if (ok) FILTERED.push(i);
+  }
+
+  const total = FILTERED.length;
+  const pages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (currentPage > pages) currentPage = pages;
+
   $('tableInfo').textContent = fmt(total) + ' registro(s) exibido(s) de ' + fmt(ALL.length) + ' da base';
 
-  if (!items.length) {
+  renderPage();
+  renderPagination(pages);
+}
+
+// ── RENDERIZAR PÁGINA ─────────────────────────────────────────
+function renderPage() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const end   = Math.min(start + PAGE_SIZE, FILTERED.length);
+  const slice = FILTERED.slice(start, end).map(i => ALL[i]);
+
+  if (!slice.length) {
     $('tableHolder').innerHTML = '<div class="loader">Nenhum item encontrado.</div>';
     return;
   }
 
-  const CHUNK = 500;
   let html = `<table><thead><tr>
     <th>PRODUTO_COD</th><th>PRODUTO</th><th>VARIAÇÃO</th><th>STATUS</th>
     <th>AQUISIÇÃO</th><th>CATÁLOGO</th><th>GRUPOCOMPRAS</th><th>TIPOPROD</th><th>TIPOFISCALPROD</th>
   </tr></thead><tbody>`;
-  for (let i = 0; i < Math.min(CHUNK, items.length); i++) html += buildRow(items[i]);
+  for (const row of slice) html += buildRow(row);
   html += '</tbody></table>';
   $('tableHolder').innerHTML = html;
 
-  if (items.length > CHUNK) {
-    const tbody = $('tableHolder').querySelector('tbody');
-    let i = CHUNK;
-    function next() {
-      const frag = document.createDocumentFragment();
-      const end  = Math.min(i + CHUNK, items.length);
-      for (; i < end; i++) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = buildRowInner(items[i]);
-        frag.appendChild(tr);
-      }
-      tbody.appendChild(frag);
-      if (i < items.length) requestAnimationFrame(next);
-    }
-    requestAnimationFrame(next);
-  }
+  // Volta ao topo da tabela ao trocar de página
+  $('tableHolder').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function buildRow(row) { return '<tr>' + buildRowInner(row) + '</tr>'; }
-function buildRowInner(row) {
+// ── PAGINAÇÃO ─────────────────────────────────────────────────
+function renderPagination(pages) {
+  const pg = $('pagination');
+  if (pages <= 1) { pg.innerHTML = ''; return; }
+
+  const btns = [];
+
+  // Anterior
+  btns.push(makeBtn('← Anterior', currentPage === 1, () => goTo(currentPage - 1)));
+
+  // Números de página com reticências
+  const range = pageRange(currentPage, pages);
+  let prev = null;
+  for (const p of range) {
+    if (prev !== null && p - prev > 1) {
+      btns.push('<span class="pg-ellipsis">…</span>');
+    }
+    btns.push(makeBtn(String(p), false, () => goTo(p), p === currentPage));
+    prev = p;
+  }
+
+  // Próximo
+  btns.push(makeBtn('Próximo →', currentPage === pages, () => goTo(currentPage + 1)));
+
+  pg.innerHTML = '';
+  btns.forEach(b => {
+    if (typeof b === 'string') pg.insertAdjacentHTML('beforeend', b);
+    else pg.appendChild(b);
+  });
+}
+
+function makeBtn(label, disabled, onClick, active) {
+  const b = document.createElement('button');
+  b.className = 'pg-btn' + (active ? ' active' : '');
+  b.textContent = label;
+  b.disabled = disabled;
+  if (!disabled) b.addEventListener('click', onClick);
+  return b;
+}
+
+function pageRange(cur, total) {
+  if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+  const pages = new Set([1, total, cur]);
+  for (let i = Math.max(2, cur - 2); i <= Math.min(total - 1, cur + 2); i++) pages.add(i);
+  return [...pages].sort((a, b) => a - b);
+}
+
+function goTo(page) {
+  currentPage = page;
+  renderPage();
+  renderPagination(Math.ceil(FILTERED.length / PAGE_SIZE) || 1);
+}
+
+// ── BUILD ROW ─────────────────────────────────────────────────
+function buildRow(row) {
   const s   = (row['STATUS'] || '').toLowerCase();
   const cls = s.includes('padr') && !s.includes('fora') ? 'badge status-padrao'
             : s.includes('fora') ? 'badge status-fora' : 'badge';
-  return `<td>${esc(row['PRODUTO_COD'])}</td>
+  return `<tr>
+    <td>${esc(row['PRODUTO_COD'])}</td>
     <td><div class="cell-ellipsis">${esc(row['PRODUTO_NOME'])}</div></td>
     <td><div class="cell-ellipsis">${esc(row['VARIACAO'])}</div></td>
     <td><span class="${cls}">${esc(row['STATUS'])}</span></td>
@@ -236,7 +280,8 @@ function buildRowInner(row) {
     <td><div class="cell-ellipsis">${esc(row['CATÁLOGO'])}</div></td>
     <td><div class="cell-ellipsis">${esc(row['GRUPOCOMPRAS'])}</div></td>
     <td>${esc(row['TIPOPROD'])}</td>
-    <td><div class="cell-ellipsis">${esc(row['TIPOFISCALPROD'])}</div></td>`;
+    <td><div class="cell-ellipsis">${esc(row['TIPOFISCALPROD'])}</div></td>
+  </tr>`;
 }
 
 // ── UTILS ─────────────────────────────────────────────────────
