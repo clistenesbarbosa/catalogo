@@ -1,585 +1,300 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Catálogo de Produtos</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Base Geral de Cadastro</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --panel:#ffffff;
+      --border:#dfe3eb;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --primary:#164194;
+      --shadow:0 8px 24px rgba(15,23,42,.08);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+    body{display:flex;flex-direction:column}
 
-  :root {
-    --bg:        #0f0f0f;
-    --surface:   #181818;
-    --border:    #2a2a2a;
-    --border2:   #333;
-    --text:      #e8e8e8;
-    --muted:     #666;
-    --accent:    #c8f542;
-    --accent2:   #a8d030;
-    --danger:    #ff4d4d;
-    --info:      #4db8ff;
-    --tag-bg:    #1e1e1e;
-    --radius:    6px;
-    --mono:      'DM Mono', monospace;
-    --sans:      'Syne', sans-serif;
-  }
+    .topbar{
+      background:#fff;border-bottom:1px solid var(--border);
+      padding:14px 18px;display:flex;align-items:center;
+      justify-content:center;position:sticky;top:0;z-index:20;
+    }
+    .brand{display:flex;align-items:center;gap:18px;}
+    .brand-logo{height:56px;width:auto;object-fit:contain;}
+    .brand-title{font-size:28px;font-weight:700;color:var(--primary);margin:0;}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+    .layout{display:flex;flex-direction:column;gap:16px;padding:16px;}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+    .filters-card{padding:16px 18px;}
 
-  /* ── HEADER ── */
-  header {
-    position: sticky; top: 0; z-index: 100;
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
-    display: flex; align-items: center; gap: 24px;
-    height: 60px;
-  }
-  .logo {
-    font-size: 13px; font-weight: 700; letter-spacing: .15em;
-    text-transform: uppercase; color: var(--accent);
-    white-space: nowrap;
-  }
-  .search-wrap {
-    flex: 1; max-width: 520px; position: relative;
-  }
-  .search-wrap svg {
-    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-    width: 15px; height: 15px; color: var(--muted); pointer-events: none;
-  }
-  #searchInput {
-    width: 100%; background: var(--surface);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    color: var(--text); font-family: var(--mono); font-size: 13px;
-    padding: 8px 12px 8px 36px; outline: none;
-    transition: border-color .15s;
-  }
-  #searchInput:focus { border-color: var(--accent); }
-  #searchInput::placeholder { color: var(--muted); }
+    .filters-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px 16px;
+    }
+    .filter-group{display:flex;flex-direction:column;gap:6px;}
+    .filter-group label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+    .filter-group select{
+      width:100%;border:1px solid var(--border);border-radius:12px;
+      padding:10px 12px;font-size:14px;outline:none;background:#fff;cursor:pointer;
+    }
+    .filter-group select:focus{border-color:var(--primary);}
 
-  #countBadge {
-    font-family: var(--mono); font-size: 12px; color: var(--muted);
-    white-space: nowrap;
-  }
-  #countBadge span { color: var(--accent); font-weight: 500; }
+    .filter-actions{display:flex;flex-direction:column;gap:6px;}
+    .filter-actions-row{display:flex;align-items:center;gap:10px;}
+    .search-box{
+      background:#fff;border:1px solid var(--border);border-radius:14px;
+      padding:10px 14px;display:flex;align-items:center;gap:10px;
+      flex:1 1 auto;box-shadow:var(--shadow);
+    }
+    .search-box input{border:none;outline:none;width:100%;font-size:14px;background:transparent;}
+    .btn{
+      border:1px solid var(--border);background:#fff;color:var(--text);
+      border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600;
+      box-shadow:var(--shadow);white-space:nowrap;
+    }
+    .btn:hover{background:#f0f4ff;border-color:var(--primary);color:var(--primary);}
 
-  /* ── LAYOUT ── */
-  .shell { display: flex; height: calc(100vh - 60px); }
+    .table-toolbar{
+      padding:12px 18px;border-bottom:1px solid var(--border);
+      display:flex;align-items:center;gap:12px;
+    }
+    .table-toolbar .info{font-size:13px;color:var(--muted);}
+    .table-container{overflow:auto;}
 
-  /* ── SIDEBAR ── */
-  aside {
-    width: 230px; min-width: 230px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    overflow-y: auto; padding: 16px 0;
-    display: flex; flex-direction: column; gap: 0;
-  }
-  aside::-webkit-scrollbar { width: 4px; }
-  aside::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+    table{width:100%;border-collapse:separate;border-spacing:0;min-width:1100px;}
+    thead th{
+      position:sticky;top:0;background:#fff;z-index:2;
+      text-align:center;padding:12px;border-bottom:1px solid var(--border);
+      font-size:12px;text-transform:uppercase;color:var(--muted);
+      letter-spacing:.4px;white-space:nowrap;
+    }
+    tbody td{padding:12px;border-bottom:1px solid #eef1f6;font-size:14px;vertical-align:top;}
+    tbody tr:hover{background:#f8fbff;}
 
-  .filter-group { border-bottom: 1px solid var(--border); padding: 0 0 8px 0; }
-  .filter-group:last-child { border-bottom: none; }
+    .cell-ellipsis{
+      max-width:260px;overflow:hidden;
+      display:-webkit-box;-webkit-box-orient:vertical;
+      -webkit-line-clamp:3;white-space:normal;
+    }
 
-  .filter-title {
-    font-size: 10px; font-weight: 700; letter-spacing: .12em;
-    text-transform: uppercase; color: var(--muted);
-    padding: 12px 16px 6px; cursor: pointer;
-    display: flex; align-items: center; justify-content: space-between;
-    user-select: none;
-  }
-  .filter-title svg { transition: transform .2s; }
-  .filter-title.collapsed svg { transform: rotate(-90deg); }
+    .badge{
+      display:inline-flex;align-items:center;
+      padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;
+      border:1px solid var(--border);background:#fff;white-space:nowrap;
+    }
+    .badge.status-padrao{background:#ecfdf5;color:#065f46;border-color:#a7f3d0;}
+    .badge.status-fora{background:#fff7ed;color:#9a3412;border-color:#fed7aa;}
 
-  .filter-options { padding: 0 8px; }
-  .filter-options.hidden { display: none; }
+    .loader{padding:40px;text-align:center;color:var(--muted);}
 
-  .filter-search {
-    width: 100%; background: var(--bg);
-    border: 1px solid var(--border); border-radius: 4px;
-    color: var(--text); font-family: var(--mono); font-size: 11px;
-    padding: 5px 8px; outline: none; margin-bottom: 4px;
-    transition: border-color .15s;
-  }
-  .filter-search:focus { border-color: var(--accent); }
-
-  .opt-list { max-height: 160px; overflow-y: auto; }
-  .opt-list::-webkit-scrollbar { width: 3px; }
-  .opt-list::-webkit-scrollbar-thumb { background: var(--border2); }
-
-  .opt-item {
-    display: flex; align-items: center; gap: 8px;
-    padding: 4px 6px; border-radius: 4px; cursor: pointer;
-    font-size: 12px; color: var(--text); user-select: none;
-    transition: background .1s;
-  }
-  .opt-item:hover { background: var(--bg); }
-  .opt-item.active { color: var(--accent); }
-  .opt-cb {
-    width: 13px; height: 13px; border: 1px solid var(--border2);
-    border-radius: 3px; flex-shrink: 0; display: flex;
-    align-items: center; justify-content: center;
-    transition: background .1s, border-color .1s;
-  }
-  .opt-item.active .opt-cb { background: var(--accent); border-color: var(--accent); }
-  .opt-cb svg { width: 9px; height: 9px; color: #000; display: none; }
-  .opt-item.active .opt-cb svg { display: block; }
-  .opt-label { flex: 1; line-height: 1.3; font-family: var(--mono); }
-  .opt-count { font-size: 10px; color: var(--muted); font-family: var(--mono); }
-
-  .clear-btn {
-    display: none; margin: 4px 8px 0;
-    background: none; border: 1px solid var(--border2);
-    border-radius: 4px; color: var(--muted); font-size: 10px;
-    padding: 3px 8px; cursor: pointer; font-family: var(--mono);
-    transition: color .1s, border-color .1s;
-  }
-  .clear-btn:hover { color: var(--danger); border-color: var(--danger); }
-  .clear-btn.visible { display: block; }
-
-  .clear-all-wrap { padding: 12px 16px 4px; }
-  #clearAll {
-    background: none; border: 1px solid var(--border2);
-    border-radius: var(--radius); color: var(--muted);
-    font-size: 11px; font-family: var(--mono); padding: 5px 10px;
-    cursor: pointer; width: 100%; transition: all .15s;
-  }
-  #clearAll:hover { color: var(--danger); border-color: var(--danger); }
-
-  /* ── MAIN TABLE ── */
-  main {
-    flex: 1; overflow-y: auto; overflow-x: auto;
-    padding: 0;
-  }
-  main::-webkit-scrollbar { width: 6px; height: 6px; }
-  main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-  table {
-    width: 100%; border-collapse: collapse;
-    font-size: 12.5px; font-family: var(--mono);
-  }
-  thead { position: sticky; top: 0; z-index: 10; }
-  th {
-    background: var(--surface);
-    border-bottom: 2px solid var(--border2);
-    border-right: 1px solid var(--border);
-    padding: 10px 14px;
-    text-align: left; white-space: nowrap;
-    font-size: 10px; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; color: var(--muted);
-    cursor: pointer; user-select: none;
-    transition: color .15s;
-  }
-  th:hover { color: var(--accent); }
-  th.sorted { color: var(--accent); }
-  th .sort-icon { opacity: .4; font-size: 10px; margin-left: 4px; }
-  th.sorted .sort-icon { opacity: 1; }
-
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background .1s;
-    cursor: default;
-  }
-  tbody tr:hover { background: #1c1c1c; }
-
-  td {
-    padding: 9px 14px;
-    border-right: 1px solid var(--border);
-    vertical-align: middle; white-space: nowrap;
-    max-width: 260px; overflow: hidden; text-overflow: ellipsis;
-  }
-  td:last-child { border-right: none; }
-
-  /* COD */
-  .td-cod { color: var(--muted); font-size: 11px; }
-
-  /* STATUS badge */
-  .badge {
-    display: inline-block; padding: 2px 8px;
-    border-radius: 3px; font-size: 10px; font-weight: 700;
-    letter-spacing: .06em; text-transform: uppercase;
-  }
-  .badge-ativo   { background: #1a2e0a; color: var(--accent); border: 1px solid #3a5a12; }
-  .badge-inativo { background: #2a0a0a; color: #ff6b6b; border: 1px solid #5a1212; }
-  .badge-default { background: var(--tag-bg); color: var(--muted); border: 1px solid var(--border2); }
-
-  /* Tags (CATÁLOGO, GRUPOCOMPRAS, etc.) */
-  .tag {
-    display: inline-block; padding: 2px 7px;
-    border-radius: 3px; font-size: 10px;
-    background: var(--tag-bg); color: #aaa;
-    border: 1px solid var(--border2);
-  }
-
-  /* EMPTY */
-  #emptyMsg {
-    display: none; padding: 80px 0;
-    text-align: center; color: var(--muted);
-    font-size: 14px;
-  }
-  #emptyMsg strong { color: var(--text); display: block; font-size: 22px; margin-bottom: 8px; }
-
-  /* LOADING */
-  #loadingMsg {
-    padding: 80px 0; text-align: center;
-    color: var(--muted); font-size: 14px;
-  }
-  .spinner {
-    width: 28px; height: 28px; border: 2px solid var(--border2);
-    border-top-color: var(--accent); border-radius: 50%;
-    animation: spin .6s linear infinite; margin: 0 auto 16px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* HIGHLIGHT */
-  mark {
-    background: rgba(200,245,66,.25);
-    color: var(--accent); border-radius: 2px; padding: 0 1px;
-  }
-
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    aside { width: 200px; min-width: 200px; }
-    td, th { padding: 8px 10px; }
-  }
-</style>
+    @media(max-width:1200px){.filters-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+    @media(max-width:900px){.filters-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+    @media(max-width:640px){.filters-grid{grid-template-columns:1fr;}}
+  </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">▣ Catálogo</div>
-  <div class="search-wrap">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-    <input id="searchInput" type="text" placeholder="Buscar por nome ou variação…" autocomplete="off"/>
+<header class="topbar">
+  <div class="brand">
+    <img class="brand-logo" src="https://lh3.googleusercontent.com/d/1FepWjuuLUr0q0PCnvHODxj1vbk288Lh6" alt="Logo FIESC"/>
+    <h1 class="brand-title">Base Geral de Cadastro</h1>
   </div>
-  <div id="countBadge">— produtos</div>
 </header>
 
-<div class="shell">
-  <aside id="sidebar"></aside>
-  <main>
-    <div id="loadingMsg"><div class="spinner"></div>Carregando catálogo…</div>
-    <div id="emptyMsg"><strong>0</strong>Nenhum produto encontrado para os filtros selecionados.</div>
-    <table id="table" style="display:none">
-      <thead id="thead"></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </main>
-</div>
+<main class="layout">
+
+  <section class="card filters-card">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label for="fCatalogo">Catálogo</label>
+        <select id="fCatalogo"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="fProduto">Produto</label>
+        <select id="fProduto"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="fStatus">Status</label>
+        <select id="fStatus"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="fAquisicao">Aquisição</label>
+        <select id="fAquisicao"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="fGrupo">Grupo de Compras</label>
+        <select id="fGrupo"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="fTipoProd">Tipo do Produto</label>
+        <select id="fTipoProd"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="fTipoFiscal">Tipo Fiscal</label>
+        <select id="fTipoFiscal"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-actions">
+        <label style="color:transparent">&#8203;</label>
+        <div class="filter-actions-row">
+          <div class="search-box">
+            <span>🔎</span>
+            <input type="text" id="globalSearch" placeholder="Buscar por produto ou variação..."/>
+          </div>
+          <button class="btn" id="clearBtn">Limpar filtros</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="table-toolbar">
+      <div class="info" id="tableInfo">Carregando registros...</div>
+    </div>
+    <div class="table-container">
+      <div id="tableHolder" class="loader">Carregando catálogo...</div>
+    </div>
+  </section>
+
+</main>
 
 <script>
-// ─────────────────────────────────────────────
-// CONFIGURAÇÃO
-// ─────────────────────────────────────────────
-// Aponte para o JSON exportado pelo Apps Script no GitHub Pages:
-// Exemplo: 'https://SEU_USUARIO.github.io/catalogo/data/catalogo.json'
-// Durante desenvolvimento local, pode usar um caminho relativo: 'data/catalogo.json'
 const JSON_URL = 'data/catalogo.json';
 
-const COLUNAS = [
-  { key: 'PRODUTO_COD',    label: 'Cód.',        filterable: true  },
-  { key: 'PRODUTO_NOME',   label: 'Nome',         filterable: true  },
-  { key: 'VARIACAO',       label: 'Variação',     filterable: true  },
-  { key: 'STATUS',         label: 'Status',       filterable: true  },
-  { key: 'AQUISIÇÃO',      label: 'Aquisição',    filterable: true  },
-  { key: 'CATÁLOGO',       label: 'Catálogo',     filterable: true  },
-  { key: 'GRUPOCOMPRAS',   label: 'Grupo',        filterable: true  },
-  { key: 'TIPOPROD',       label: 'Tipo Prod.',   filterable: true  },
-  { key: 'TIPOFISCALPROD', label: 'Tipo Fiscal',  filterable: true  },
+let ALL = [];
+let searchTimer = null;
+
+const $ = id => document.getElementById(id);
+
+const FILTERS = [
+  { el: $('fCatalogo'),   key: 'CATÁLOGO'      },
+  { el: $('fProduto'),    key: 'PRODUTO_NOME'  },
+  { el: $('fStatus'),     key: 'STATUS'         },
+  { el: $('fAquisicao'),  key: 'AQUISIÇÃO'      },
+  { el: $('fGrupo'),      key: 'GRUPOCOMPRAS'   },
+  { el: $('fTipoProd'),   key: 'TIPOPROD'       },
+  { el: $('fTipoFiscal'), key: 'TIPOFISCALPROD' },
 ];
 
-const SEARCH_COLS = ['PRODUTO_NOME','VARIACAO'];
-const FILTERABLE  = COLUNAS.filter(c => c.filterable).map(c => c.key);
-
-// ─────────────────────────────────────────────
-let allData    = [];
-let filtered   = [];
-let sortCol    = null;
-let sortAsc    = true;
-let activeFilters = {};   // { COL: Set(values) }
-let searchTerm = '';
-
-FILTERABLE.forEach(k => activeFilters[k] = new Set());
-
-// ─────────────────────────────────────────────
 async function init() {
   try {
-    const res  = await fetch(JSON_URL);
-    if (!res.ok) throw new Error(res.status);
-    allData = await res.json();
+    const res = await fetch(JSON_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    ALL = await res.json();
   } catch(e) {
-    document.getElementById('loadingMsg').innerHTML =
-      '⚠️ Não foi possível carregar o JSON.<br><small style="font-size:11px">Verifique o caminho em <code>JSON_URL</code> e a configuração do GitHub Pages.</small>';
+    $('tableHolder').innerHTML = '<div class="loader">Erro ao carregar: ' + e.message + '</div>';
     return;
   }
-  document.getElementById('loadingMsg').style.display = 'none';
-  buildHeader();
-  buildSidebar();
-  applyAll();
-}
 
-// ─────────────────────────────────────────────
-function buildHeader() {
-  const tr = document.createElement('tr');
-  COLUNAS.forEach(col => {
-    const th = document.createElement('th');
-    th.innerHTML = `${col.label} <span class="sort-icon">↕</span>`;
-    th.dataset.key = col.key;
-    th.addEventListener('click', () => toggleSort(col.key, th));
-    tr.appendChild(th);
-  });
-  document.getElementById('thead').appendChild(tr);
-}
-
-function toggleSort(key, th) {
-  if (sortCol === key) { sortAsc = !sortAsc; }
-  else { sortCol = key; sortAsc = true; }
-  document.querySelectorAll('th').forEach(t => {
-    t.classList.remove('sorted');
-    t.querySelector('.sort-icon').textContent = '↕';
-  });
-  th.classList.add('sorted');
-  th.querySelector('.sort-icon').textContent = sortAsc ? '↑' : '↓';
-  renderTable();
-}
-
-// ─────────────────────────────────────────────
-function buildSidebar() {
-  const sidebar = document.getElementById('sidebar');
-
-  // Botão limpar tudo
-  const wrap = document.createElement('div');
-  wrap.className = 'clear-all-wrap';
-  wrap.innerHTML = '<button id="clearAll">✕ Limpar todos os filtros</button>';
-  wrap.querySelector('#clearAll').addEventListener('click', clearAll);
-  sidebar.appendChild(wrap);
-
-  FILTERABLE.forEach(key => {
-    const col   = COLUNAS.find(c => c.key === key);
-    const label = col ? col.label : key;
-    const group = document.createElement('div');
-    group.className = 'filter-group';
-    group.dataset.key = key;
-
-    // título clicável
-    const title = document.createElement('div');
-    title.className = 'filter-title';
-    title.innerHTML = `${label}
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12">
-        <polyline points="6 9 12 15 18 9"/>
-      </svg>`;
-    title.addEventListener('click', () => {
-      title.classList.toggle('collapsed');
-      opts.classList.toggle('hidden');
+  // Popular dropdowns
+  FILTERS.forEach(f => {
+    const vals = [...new Set(ALL.map(r => r[f.key] || '').filter(Boolean))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+    vals.forEach(v => {
+      const o = document.createElement('option');
+      o.value = o.textContent = v;
+      f.el.appendChild(o);
     });
-
-    const opts = document.createElement('div');
-    opts.className = 'filter-options';
-
-    const fsearch = document.createElement('input');
-    fsearch.type = 'text';
-    fsearch.placeholder = `Filtrar ${label}…`;
-    fsearch.className = 'filter-search';
-    fsearch.addEventListener('input', () => renderOptList(key));
-
-    const list = document.createElement('div');
-    list.className = 'opt-list';
-    list.id = `list-${key}`;
-
-    const clearBtn = document.createElement('button');
-    clearBtn.className = 'clear-btn';
-    clearBtn.id = `clear-${key}`;
-    clearBtn.textContent = `✕ Limpar ${label}`;
-    clearBtn.addEventListener('click', () => {
-      activeFilters[key].clear();
-      updateClearBtn(key);
-      applyAll();
-    });
-
-    opts.appendChild(fsearch);
-    opts.appendChild(list);
-    opts.appendChild(clearBtn);
-    group.appendChild(title);
-    group.appendChild(opts);
-    group.dataset.fsearch = '';
-
-    // guardar referência ao input de busca
-    group.querySelector('.filter-search').addEventListener('input', function() {
-      group.dataset.fsearch = this.value.toLowerCase();
-      renderOptList(key);
-    });
-
-    sidebar.appendChild(group);
+    f.el.addEventListener('change', applyFilters);
   });
+
+  $('globalSearch').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(applyFilters, 250);
+  });
+
+  $('clearBtn').addEventListener('click', () => {
+    FILTERS.forEach(f => f.el.value = '');
+    $('globalSearch').value = '';
+    applyFilters();
+  });
+
+  applyFilters();
 }
 
-function getUniqueCounts(key) {
-  // conta valores considerando outros filtros ativos (exceto o próprio)
-  const others = filtered; // usa o conjunto já filtrado pelos outros critérios
-  const map = {};
-  others.forEach(row => {
-    const v = row[key] || '(vazio)';
-    map[v] = (map[v] || 0) + 1;
-  });
-  return map;
-}
+function applyFilters() {
+  const q = norm($('globalSearch').value);
 
-function renderOptList(key) {
-  const group   = document.querySelector(`.filter-group[data-key="${key}"]`);
-  const fsearch = group.dataset.fsearch || '';
-  const list    = document.getElementById(`list-${key}`);
-  const counts  = {};
-  allData.forEach(row => {
-    const v = row[key] || '(vazio)';
-    counts[v] = (counts[v] || 0) + 1;
-  });
-  const entries = Object.entries(counts)
-    .filter(([v]) => v.toLowerCase().includes(fsearch))
-    .sort((a, b) => a[0].localeCompare(b[0], 'pt-BR'));
-
-  list.innerHTML = '';
-  entries.forEach(([val, cnt]) => {
-    const active = activeFilters[key].has(val);
-    const item   = document.createElement('div');
-    item.className = 'opt-item' + (active ? ' active' : '');
-    item.innerHTML = `
-      <div class="opt-cb">
-        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="2 6 5 9 10 3"/>
-        </svg>
-      </div>
-      <span class="opt-label">${val}</span>
-      <span class="opt-count">${cnt}</span>`;
-    item.addEventListener('click', () => {
-      if (activeFilters[key].has(val)) activeFilters[key].delete(val);
-      else activeFilters[key].add(val);
-      item.classList.toggle('active');
-      item.querySelector('.opt-cb').style.background =
-        activeFilters[key].has(val) ? 'var(--accent)' : '';
-      updateClearBtn(key);
-      applyAll();
-    });
-    list.appendChild(item);
-  });
-}
-
-function updateClearBtn(key) {
-  const btn = document.getElementById(`clear-${key}`);
-  if (!btn) return;
-  btn.classList.toggle('visible', activeFilters[key].size > 0);
-}
-
-// ─────────────────────────────────────────────
-function applyAll() {
-  const term = searchTerm.toLowerCase().trim();
-
-  filtered = allData.filter(row => {
-    // busca textual
-    if (term) {
-      const hit = SEARCH_COLS.some(k =>
-        (row[k] || '').toLowerCase().includes(term));
-      if (!hit) return false;
+  const result = ALL.filter(row => {
+    if (q) {
+      const hay = norm((row['PRODUTO_NOME'] || '') + ' ' + (row['VARIACAO'] || ''));
+      if (!hay.includes(q)) return false;
     }
-    // filtros sidebar
-    for (const key of FILTERABLE) {
-      if (activeFilters[key].size === 0) continue;
-      const val = row[key] || '(vazio)';
-      if (!activeFilters[key].has(val)) return false;
+    for (const f of FILTERS) {
+      if (f.el.value && row[f.key] !== f.el.value) return false;
     }
     return true;
   });
 
-  // Re-renderiza listas de opções
-  FILTERABLE.forEach(key => renderOptList(key));
-
-  renderTable();
+  $('tableInfo').textContent = fmt(result.length) + ' registro(s) exibido(s) de ' + fmt(ALL.length) + ' da base';
+  renderTable(result);
 }
 
-// ─────────────────────────────────────────────
-function renderTable() {
-  const data = [...filtered];
-
-  if (sortCol) {
-    data.sort((a, b) => {
-      const va = (a[sortCol] || '').toLowerCase();
-      const vb = (b[sortCol] || '').toLowerCase();
-      return sortAsc ? va.localeCompare(vb, 'pt-BR') : vb.localeCompare(va, 'pt-BR');
-    });
+function renderTable(items) {
+  if (!items.length) {
+    $('tableHolder').innerHTML = '<div class="loader">Nenhum item encontrado.</div>';
+    return;
   }
 
-  const term  = searchTerm.toLowerCase().trim();
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '';
+  const CHUNK = 500;
+  let html = `<table><thead><tr>
+    <th>PRODUTO_COD</th><th>PRODUTO</th><th>VARIAÇÃO</th><th>STATUS</th>
+    <th>AQUISIÇÃO</th><th>CATÁLOGO</th><th>GRUPOCOMPRAS</th><th>TIPOPROD</th><th>TIPOFISCALPROD</th>
+  </tr></thead><tbody>`;
 
-  const table   = document.getElementById('table');
-  const emptyEl = document.getElementById('emptyMsg');
+  items.slice(0, CHUNK).forEach(row => { html += buildRow(row); });
+  html += '</tbody></table>';
+  $('tableHolder').innerHTML = html;
 
-  if (data.length === 0) {
-    table.style.display   = 'none';
-    emptyEl.style.display = 'block';
-  } else {
-    table.style.display   = '';
-    emptyEl.style.display = 'none';
-
-    const frag = document.createDocumentFragment();
-    data.forEach(row => {
-      const tr = document.createElement('tr');
-      COLUNAS.forEach(col => {
-        const td  = document.createElement('td');
-        let   val = row[col.key] || '';
-
-        if (col.key === 'STATUS') {
-          const cl = val.toLowerCase().includes('ativ') && !val.toLowerCase().includes('in')
-            ? 'badge-ativo'
-            : val.toLowerCase().includes('inat') ? 'badge-inativo' : 'badge-default';
-          td.innerHTML = `<span class="badge ${cl}">${val}</span>`;
-        } else if (['CATÁLOGO','GRUPOCOMPRAS','TIPOPROD','TIPOFISCALPROD','AQUISIÇÃO'].includes(col.key)) {
-          td.innerHTML = val ? `<span class="tag">${highlight(val, term)}</span>` : '';
-        } else if (col.key === 'PRODUTO_COD') {
-          td.className = 'td-cod';
-          td.innerHTML = highlight(val, term);
-        } else {
-          td.innerHTML = highlight(val, term);
-        }
-        tr.appendChild(td);
-      });
-      frag.appendChild(tr);
-    });
-    tbody.appendChild(frag);
+  if (items.length > CHUNK) {
+    const tbody = $('tableHolder').querySelector('tbody');
+    let i = CHUNK;
+    function next() {
+      const frag = document.createDocumentFragment();
+      const end = Math.min(i + CHUNK, items.length);
+      for (; i < end; i++) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = buildRowInner(items[i]);
+        frag.appendChild(tr);
+      }
+      tbody.appendChild(frag);
+      if (i < items.length) requestAnimationFrame(next);
+    }
+    requestAnimationFrame(next);
   }
-
-  const badge = document.getElementById('countBadge');
-  badge.innerHTML = `<span>${data.length.toLocaleString('pt-BR')}</span> / ${allData.length.toLocaleString('pt-BR')} produtos`;
 }
 
-function highlight(text, term) {
-  if (!term || !text) return text;
-  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
+function buildRow(row) {
+  return '<tr>' + buildRowInner(row) + '</tr>';
 }
 
-function clearAll() {
-  FILTERABLE.forEach(k => { activeFilters[k].clear(); updateClearBtn(k); });
-  searchTerm = '';
-  document.getElementById('searchInput').value = '';
-  applyAll();
+function buildRowInner(row) {
+  const s    = (row['STATUS'] || '').toLowerCase();
+  const cls  = s.includes('padr') && !s.includes('fora') ? 'badge status-padrao'
+             : s.includes('fora') ? 'badge status-fora' : 'badge';
+  return `
+    <td>${esc(row['PRODUTO_COD'])}</td>
+    <td><div class="cell-ellipsis">${esc(row['PRODUTO_NOME'])}</div></td>
+    <td><div class="cell-ellipsis">${esc(row['VARIACAO'])}</div></td>
+    <td><span class="${cls}">${esc(row['STATUS'])}</span></td>
+    <td><div class="cell-ellipsis">${esc(row['AQUISIÇÃO'])}</div></td>
+    <td><div class="cell-ellipsis">${esc(row['CATÁLOGO'])}</div></td>
+    <td><div class="cell-ellipsis">${esc(row['GRUPOCOMPRAS'])}</div></td>
+    <td>${esc(row['TIPOPROD'])}</td>
+    <td><div class="cell-ellipsis">${esc(row['TIPOFISCALPROD'])}</div></td>`;
 }
 
-// ─────────────────────────────────────────────
-document.getElementById('searchInput').addEventListener('input', function() {
-  searchTerm = this.value;
-  applyAll();
-});
+function norm(t) {
+  return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+}
+function fmt(n) { return new Intl.NumberFormat('pt-BR').format(n); }
+function esc(s) {
+  return String(s||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 
 init();
 </script>
