@@ -93,7 +93,7 @@
       <div class="filter-actions">
         <label style="color:transparent">&#8203;</label>
         <div class="filter-actions-row">
-          <div class="search-box"><span>🔎</span><input type="text" id="globalSearch" placeholder="Buscar por produto ou variação..."/></div>
+          <div class="search-box"><span>🔎</span><input type="text" id="globalSearch" placeholder="Buscar por código, produto ou variação..."/></div>
           <button class="btn" id="clearBtn">Limpar filtros</button>
         </div>
       </div>
@@ -136,13 +136,12 @@ async function init() {
     const res = await fetch(JSON_URL);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const payload = await res.json();
-    // Suporta tanto o formato novo { atualizadoEm, itens } quanto o array legado
     if (Array.isArray(payload)) {
       ALL = payload;
     } else {
       ALL = payload.itens || [];
       if (payload.atualizadoEm) {
-        document.getElementById('dataAtualizacao').textContent = 'Atualizado em: ' + payload.atualizadoEm;
+        $('dataAtualizacao').textContent = 'Atualizado em: ' + payload.atualizadoEm;
       }
     }
   } catch(e) {
@@ -150,8 +149,10 @@ async function init() {
     return;
   }
 
-  // Pré-computar índice de busca uma única vez
-  IDX = ALL.map(r => norm((r['PRODUTO_NOME'] || '') + ' ' + (r['VARIACAO'] || '')));
+  // Pré-computar índice de busca — inclui PRODUTO_COD, PRODUTO_NOME e VARIACAO
+  IDX = ALL.map(r =>
+    norm((r['PRODUTO_COD'] || '') + ' ' + (r['PRODUTO_NOME'] || '') + ' ' + (r['VARIACAO'] || ''))
+  );
 
   // Popular dropdowns
   FILTER_DEFS.forEach(f => {
@@ -231,22 +232,16 @@ function renderPagination(pages) {
   if (pages <= 1) { pg.innerHTML = ''; return; }
 
   const btns = [];
-
-  // Anterior
   btns.push(makeBtn('← Anterior', currentPage === 1, () => goTo(currentPage - 1)));
 
-  // Números de página com reticências
   const range = pageRange(currentPage, pages);
   let prev = null;
   for (const p of range) {
-    if (prev !== null && p - prev > 1) {
-      btns.push('<span class="pg-ellipsis">…</span>');
-    }
+    if (prev !== null && p - prev > 1) btns.push('<span class="pg-ellipsis">…</span>');
     btns.push(makeBtn(String(p), false, () => goTo(p), p === currentPage));
     prev = p;
   }
 
-  // Próximo
   btns.push(makeBtn('Próximo →', currentPage === pages, () => goTo(currentPage + 1)));
 
   pg.innerHTML = '';
