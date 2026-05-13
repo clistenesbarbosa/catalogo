@@ -39,8 +39,10 @@
     .btn:hover{background:#f0f4ff;border-color:var(--primary);color:var(--primary);}
 
     /* TOOLBAR */
-    .table-toolbar{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+    .table-toolbar{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
     .table-toolbar .info{font-size:13px;color:var(--muted);}
+    .export-csv-btn{border:1px solid var(--border);background:#fff;color:var(--muted);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;}
+    .export-csv-btn:hover{background:var(--primary-soft);border-color:var(--primary);color:var(--primary);}
 
     /* TABELA */
     .table-container{overflow-x:auto;}
@@ -55,12 +57,15 @@
     .loader{padding:40px;text-align:center;color:var(--muted);}
 
     /* PAGINAÇÃO */
-    .pagination{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 18px;border-top:1px solid var(--border);flex-wrap:wrap;}
+    .pagination-bar{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 18px;border-top:1px solid var(--border);flex-wrap:wrap;}
+    .pagination{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;}
     .pg-btn{min-width:36px;height:36px;padding:0 10px;border:1px solid var(--border);background:#fff;color:var(--text);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;}
     .pg-btn:hover:not(:disabled){background:var(--primary-soft);border-color:var(--primary);color:var(--primary);}
     .pg-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;}
     .pg-btn:disabled{opacity:.35;cursor:default;}
     .pg-ellipsis{font-size:13px;color:var(--muted);padding:0 4px;}
+    .page-size-control{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap;}
+    .page-size-control select{border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:13px;background:#fff;color:var(--text);outline:none;cursor:pointer;}
 
     @media(max-width:1200px){.filters-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
     @media(max-width:900px){.filters-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
@@ -101,21 +106,37 @@
   </section>
 
   <section class="card">
-    <div class="table-toolbar"><div class="info" id="tableInfo">Carregando registros...</div></div>
+    <div class="table-toolbar">
+      <div class="info" id="tableInfo">Carregando registros...</div>
+      <button class="export-csv-btn" id="exportCsvBtn">⬇ Exportar CSV</button>
+    </div>
     <div class="table-container"><div id="tableHolder" class="loader">Carregando catálogo...</div></div>
-    <div class="pagination" id="pagination"></div>
+    <div class="pagination-bar">
+      <div class="pagination" id="pagination"></div>
+      <div class="page-size-control">
+        <span>Visualizar</span>
+        <select id="pageSizeSelect">
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="200">200</option>
+          <option value="500">500</option>
+        </select>
+        <span>por página</span>
+      </div>
+    </div>
   </section>
 
 </main>
 
 <script>
 const JSON_URL  = 'data/catalogo.json';
-const PAGE_SIZE = 50;
+const DEFAULT_PAGE_SIZE = 50;
 
 let ALL      = [];
 let IDX      = [];
 let FILTERED = [];
 let currentPage = 1;
+let pageSize = DEFAULT_PAGE_SIZE;
 let searchTimer = null;
 
 const $ = id => document.getElementById(id);
@@ -177,6 +198,14 @@ async function init() {
     applyFilters();
   });
 
+  $('exportCsvBtn').addEventListener('click', exportCSV);
+
+  $('pageSizeSelect').addEventListener('change', () => {
+    pageSize = Number($('pageSizeSelect').value) || DEFAULT_PAGE_SIZE;
+    currentPage = 1;
+    applyFilters();
+  });
+
   applyFilters();
 }
 
@@ -195,7 +224,7 @@ function applyFilters() {
   }
 
   const total = FILTERED.length;
-  const pages = Math.ceil(total / PAGE_SIZE) || 1;
+  const pages = Math.ceil(total / pageSize) || 1;
   if (currentPage > pages) currentPage = pages;
 
   $('tableInfo').textContent = fmt(total) + ' registro(s) exibido(s) de ' + fmt(ALL.length) + ' da base';
@@ -206,8 +235,8 @@ function applyFilters() {
 
 // ── RENDERIZAR PÁGINA ─────────────────────────────────────────
 function renderPage() {
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const end   = Math.min(start + PAGE_SIZE, FILTERED.length);
+  const start = (currentPage - 1) * pageSize;
+  const end   = Math.min(start + pageSize, FILTERED.length);
   const slice = FILTERED.slice(start, end).map(i => ALL[i]);
 
   if (!slice.length) {
@@ -270,7 +299,49 @@ function pageRange(cur, total) {
 function goTo(page) {
   currentPage = page;
   renderPage();
-  renderPagination(Math.ceil(FILTERED.length / PAGE_SIZE) || 1);
+  renderPagination(Math.ceil(FILTERED.length / pageSize) || 1);
+}
+
+// ── EXPORTAR CSV ──────────────────────────────────────────────
+function exportCSV() {
+  const rows = FILTERED.map(i => ALL[i]);
+
+  if (!rows.length) {
+    alert('Nenhum registro para exportar.');
+    return;
+  }
+
+  const headers = [
+    'PRODUTO_COD',
+    'PRODUTO_NOME',
+    'VARIACAO',
+    'STATUS',
+    'AQUISIÇÃO',
+    'CATÁLOGO',
+    'GRUPOCOMPRAS',
+    'TIPOPROD',
+    'TIPOFISCALPROD'
+  ];
+
+  const csv = [
+    headers.join(';'),
+    ...rows.map(row =>
+      headers.map(h => csvCell(row[h])).join(';')
+    )
+  ].join('\n');
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const data = new Date().toISOString().slice(0, 10);
+
+  link.href = URL.createObjectURL(blob);
+  link.download = 'catalogo_' + data + '.csv';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(link.href);
 }
 
 // ── BUILD ROW ─────────────────────────────────────────────────
@@ -295,6 +366,7 @@ function buildRow(row) {
 function norm(t) { return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
 function fmt(n)  { return new Intl.NumberFormat('pt-BR').format(n); }
 function esc(s)  { return String(s||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function csvCell(v) { return '"' + String(v ?? '').replace(/"/g, '""') + '"'; }
 
 init();
 </script>
